@@ -23,7 +23,9 @@
                      block to add a new engagement.
      id="progression" -> Role progression table + evaluation themes
      id="resume"  -> Timeline, skills, resume PDF download link
-     id="log"     -> The empty "Insights" section for future writing
+     id="log"     -> Insights. Articles are loaded automatically from the "insights" folder
+                    in your GitHub repo: add one .html file per article there (see
+                    insights/template.html). Newest first = name files 2026-11-18-title.html.
      id="contact" -> Email / phone / LinkedIn
 
    To swap the photo: replace assets/headshot.jpg, or change the
@@ -226,6 +228,10 @@
     .stat-strip{grid-template-columns:1fr; max-width:100%;}
     .stat{border-right:none; border-bottom:1px solid var(--line); padding:22px 0;}
     .sar{grid-template-columns:1fr; gap:22px;}
+    .insight-row{grid-template-columns:1fr; gap:10px; padding:26px 0;}
+    .insight-row .meta b{display:inline; margin-right:10px;}
+    .reader-panel{margin:0; min-height:100%; border-radius:0; padding:28px 22px 48px;}
+    .reader-bar{margin-bottom:28px;}
     .chart-grid{grid-template-columns:1fr; gap:36px;}
     .chart-grid.two{grid-template-columns:1fr;}
     .prog-lists{grid-template-columns:1fr; gap:40px;}
@@ -240,6 +246,40 @@
     .hero{padding-top:120px;}
     .hero-spark{display:none;}
   }
+
+  /* INSIGHTS: article list + reading overlay */
+  .insight-list{border-top:1px solid var(--ink);}
+  .insight-row{display:grid; grid-template-columns:130px 1fr auto; gap:32px; align-items:baseline; width:100%; text-align:left; background:none; border:none; border-bottom:1px solid var(--line); padding:30px 8px 30px 0; cursor:pointer; font:inherit; color:inherit;}
+  .insight-row .meta{font-family:'IBM Plex Mono'; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--slate); line-height:1.7;}
+  .insight-row .meta b{display:block; color:var(--gold); font-weight:500;}
+  .insight-row h3{font-size:22px; line-height:1.3; margin-bottom:8px; transition:color .2s;}
+  .insight-row p{font-size:14.5px; color:var(--ink-soft); max-width:620px;}
+  .insight-row .go{font-family:'IBM Plex Mono'; font-size:11.5px; letter-spacing:0.08em; text-transform:uppercase; color:var(--gold); white-space:nowrap; transition:transform .2s;}
+  .insight-row:hover h3, .insight-row:focus-visible h3{color:var(--gold);}
+  .insight-row:hover .go, .insight-row:focus-visible .go{transform:translateX(4px);}
+  .insight-row:focus-visible{outline:2px solid var(--gold); outline-offset:2px;}
+
+  .reader{position:fixed; inset:0; z-index:100; background:rgba(30,43,63,0.55); backdrop-filter:blur(4px); display:none; overflow-y:auto; -webkit-overflow-scrolling:touch;}
+  .reader.open{display:block;}
+  .reader-panel{max-width:780px; margin:48px auto; background:var(--paper); border-radius:6px; padding:56px 64px 64px; position:relative; box-shadow:0 24px 80px rgba(30,43,63,0.35);}
+  .reader-bar{display:flex; justify-content:space-between; align-items:center; margin-bottom:40px; gap:16px;}
+  .reader-bar .meta{font-family:'IBM Plex Mono'; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--gold);}
+  .reader-bar .meta span{color:var(--slate);}
+  .reader-btns{display:flex; gap:10px;}
+  .reader-btns button{font-family:'IBM Plex Mono'; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; border:1px solid var(--line); background:transparent; color:var(--ink); padding:9px 14px; border-radius:3px; cursor:pointer; transition:all .2s;}
+  .reader-btns button:hover{border-color:var(--ink); background:var(--ink); color:var(--paper);}
+  .reader-body h1{font-size:clamp(28px,4vw,38px); line-height:1.2; margin-bottom:18px;}
+  .reader-body .lead{font-size:18px; color:var(--ink-soft); line-height:1.6; padding-bottom:30px; margin-bottom:34px; border-bottom:1px solid var(--line);}
+  .reader-body p{font-size:17px; line-height:1.78; color:var(--ink-soft); margin-bottom:22px;}
+  .reader-body h4{font-family:'Archivo'; font-size:20px; margin:40px 0 14px; color:var(--ink);}
+  .reader-body ul, .reader-body ol{margin:0 0 22px 22px; color:var(--ink-soft); font-size:17px; line-height:1.7;}
+  .reader-body li{margin-bottom:8px;}
+  .reader-body blockquote{border-left:3px solid var(--gold); padding:4px 0 4px 22px; margin:30px 0; font-size:19px; line-height:1.6; color:var(--ink);}
+  .reader-body figure{margin:32px 0;}
+  .reader-body figure img{width:100%; height:auto; border-radius:4px; display:block;}
+  .reader-body figcaption{font-family:'IBM Plex Mono'; font-size:11px; color:var(--slate); margin-top:10px;}
+  .reader-foot{margin-top:48px; padding-top:26px; border-top:1px solid var(--line);}
+  body.reader-open{overflow:hidden;}
 </style>
 </head>
 <body>
@@ -807,13 +847,62 @@
   <section id="log" class="reveal">
    <div class="wrap">
     <div class="seclabel"><span class="num mono">05</span><h2>Insights</h2><div class="line"></div></div>
-    <div class="log-empty">
+    <div class="insight-list" id="insight-list"></div>
+    <div class="log-empty" id="insight-empty">
       <span class="mono">No entries yet</span>
       <h3>Field notes are coming soon.</h3>
-      <p>Writing on supplier turnarounds, OEM escalation management, and running cross-border programs — in progress.</p>
+      <p>Writing on supplier turnarounds, OEM escalation management, and running cross-border programs, in progress.</p>
     </div>
    </div>
   </section>
+
+  <!-- ===================== INSIGHTS ARTICLES =====================
+       EASIEST WAY: add each article as its own file in the "insights" folder of the repo.
+       Name it with the date first so newest sorts on top, e.g. insights/2026-11-18-daily-kpi-routines.html
+       The file only needs one <article class="insight" ...> block (copy insights/template.html).
+       Images inside an article: use a full web address or a path from the site root, e.g. assets/photo.jpg
+       Articles you add there appear on the site automatically, usually within 1-2 minutes.
+
+       ALSO WORKS: articles written directly below, inside <div id="insight-posts">.
+       Attributes on <article>:
+         data-date     shown on the list, e.g. "Nov 2026"
+         data-tag      small category label, e.g. "Operations"
+         data-summary  one or two sentences shown on the list
+         data-read     optional, e.g. "4 min read" (calculated if left out)
+         data-draft    hides the article; add ?preview to the site address to see drafts
+       Inside: <h3> = title, <p class="lead"> = opening line, <p>, <h4> subheading,
+       <ul>/<li> bullets, <blockquote> pull quote, <figure><img src=""><figcaption></figcaption></figure>
+       ============================================================ -->
+  <div id="insight-posts" hidden>
+    <article class="insight" id="insight-sample" data-date="Nov 2026" data-tag="Sample" data-summary="A template showing how an article is laid out. Hidden from visitors until published." data-draft>
+      <h3>Sample article: how this layout works</h3>
+      <p class="lead">One or two sentences that frame the piece. This is what a reader sees first when the article opens.</p>
+      <p>Body paragraphs go here. Keep them short. Two or three sentences each reads well on a phone.</p>
+      <h4>A subheading</h4>
+      <p>Use subheadings to break a longer piece into parts a reader can scan.</p>
+      <ul>
+        <li>Bullets work for short lists, such as steps or lessons.</li>
+        <li>Each item should stand on its own.</li>
+      </ul>
+      <blockquote>A pull quote is good for the one line you want people to remember.</blockquote>
+      <p>Close with what a reader can take away or try.</p>
+    </article>
+  </div>
+
+  <!-- Reading overlay (filled by the script below) -->
+  <div class="reader" id="reader" role="dialog" aria-modal="true" aria-labelledby="reader-title" aria-hidden="true">
+    <div class="reader-panel">
+      <div class="reader-bar">
+        <div class="meta" id="reader-meta"></div>
+        <div class="reader-btns">
+          <button type="button" id="reader-copy">Copy link</button>
+          <button type="button" id="reader-close">Close</button>
+        </div>
+      </div>
+      <div class="reader-body" id="reader-body"></div>
+      <div class="reader-foot"><button type="button" class="btn" id="reader-back">Back to Insights</button></div>
+    </div>
+  </div>
 
 <!-- CONTACT -->
 <footer id="contact">
@@ -851,5 +940,95 @@
     document.querySelectorAll('.reveal').forEach(el => el.classList.add('in'));
   }
 </script>
+
+<script>
+  /* Insights: loads articles from the repo's "insights" folder (plus any written inline above),
+     builds the list, and opens each one in a reading overlay. */
+  (function(){
+    var GH_USER='kaden-oeltjenbruns', GH_REPO='kaden-oeltjenbruns.github.io', FOLDER='insights';
+    var preview=/[?&]preview/.test(location.search);
+    var list=document.getElementById('insight-list'), empty=document.getElementById('insight-empty');
+    var reader=document.getElementById('reader'), body=document.getElementById('reader-body'), meta=document.getElementById('reader-meta');
+    var closeBtn=document.getElementById('reader-close'), lastFocus=null, current=null, byId={};
+    function esc(t){return String(t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+    function readTime(a){var w=(a.textContent||'').trim().split(/\s+/).length; return Math.max(1,Math.round(w/200))+' min read';}
+
+    function listFiles(){
+      return fetch('https://api.github.com/repos/'+GH_USER+'/'+GH_REPO+'/contents/'+FOLDER)
+        .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+        .then(function(a){ return a.filter(function(f){return f.type==='file' && /\.html$/i.test(f.name) && !/^[_.]/.test(f.name);}).map(function(f){return f.name;}); })
+        .catch(function(){
+          return fetch(FOLDER+'/index.json',{cache:'no-cache'}).then(function(r){ if(!r.ok) throw 0; return r.json(); }).catch(function(){ return []; });
+        });
+    }
+    function loadFile(name){
+      return fetch(FOLDER+'/'+encodeURIComponent(name),{cache:'no-cache'})
+        .then(function(r){ if(!r.ok) throw 0; return r.text(); })
+        .then(function(html){
+          var doc=new DOMParser().parseFromString(html,'text/html');
+          [].forEach.call(doc.querySelectorAll('script,iframe,object,embed'),function(x){x.remove();});
+          var a=doc.querySelector('article'); if(!a) return null;
+          a.id='insight-'+name.replace(/\.html$/i,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+          return a;
+        }).catch(function(){ return null; });
+    }
+
+    function render(posts){
+      posts=posts.filter(function(a){ return preview || !a.hasAttribute('data-draft'); });
+      if(!posts.length) return;
+      empty.style.display='none'; list.style.display=''; list.innerHTML='';
+      posts.forEach(function(a){
+        byId[a.id]=a;
+        var t=a.querySelector('h3'); t=t?t.textContent:'Untitled';
+        var b=document.createElement('button'); b.type='button'; b.className='insight-row';
+        b.innerHTML='<div class="meta"><b>'+esc(a.getAttribute('data-tag')||'')+'</b>'+esc(a.getAttribute('data-date')||'')+'</div>'
+          +'<div><h3>'+esc(t)+'</h3><p>'+esc(a.getAttribute('data-summary')||'')+'</p></div>'
+          +'<div class="go">Read &rarr;</div>';
+        b.addEventListener('click',function(){ openPost(a.id,true); });
+        list.appendChild(b);
+      });
+      if(location.hash.indexOf('#insight-')===0) openPost(location.hash.slice(1),false);
+    }
+
+    function openPost(id,push){
+      var a=byId[id]; if(!a) return;
+      current=id; lastFocus=document.activeElement;
+      var clone=a.cloneNode(true);
+      var h=clone.querySelector('h3'); if(h){ var h1=document.createElement('h1'); h1.id='reader-title'; h1.textContent=h.textContent; h.replaceWith(h1); }
+      body.innerHTML=''; while(clone.firstChild) body.appendChild(clone.firstChild);
+      meta.innerHTML=esc(a.getAttribute('data-tag')||'')+' <span>&middot; '+esc(a.getAttribute('data-date')||'')+' &middot; '+esc(a.getAttribute('data-read')||readTime(a))+'</span>';
+      reader.classList.add('open'); reader.setAttribute('aria-hidden','false'); document.body.classList.add('reader-open');
+      reader.scrollTop=0; closeBtn.focus();
+      if(push && location.hash!=='#'+id){ history.pushState(null,'',location.pathname+location.search+'#'+id); }
+    }
+    function closePost(){
+      if(!current) return; current=null;
+      reader.classList.remove('open'); reader.setAttribute('aria-hidden','true'); document.body.classList.remove('reader-open');
+      if(/^#insight-/.test(location.hash)) history.replaceState(null,'',location.pathname+location.search+'#log');
+      if(lastFocus&&lastFocus.focus) lastFocus.focus();
+    }
+    closeBtn.addEventListener('click',closePost);
+    document.getElementById('reader-back').addEventListener('click',function(){ closePost(); document.getElementById('log').scrollIntoView(); });
+    reader.addEventListener('click',function(e){ if(e.target===reader) closePost(); });
+    document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&current) closePost(); });
+    document.getElementById('reader-copy').addEventListener('click',function(){
+      var btn=this, url=location.origin+location.pathname+'#'+current;
+      try{ navigator.clipboard.writeText(url).then(function(){ btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy link';},1600); }); }catch(err){ prompt('Copy this link',url); }
+    });
+    window.addEventListener('hashchange',function(){
+      var m=location.hash.slice(1);
+      if(m.indexOf('insight-')===0) openPost(m,false); else if(current) closePost();
+    });
+
+    var inline=[].slice.call(document.querySelectorAll('#insight-posts article.insight'));
+    listFiles().then(function(names){
+      names=names.slice().sort().reverse();
+      return Promise.all(names.map(loadFile));
+    }).then(function(files){
+      render(files.filter(Boolean).concat(inline));
+    });
+  })();
+</script>
+<script data-goatcounter="https://kaden-oeltjenbruns.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>

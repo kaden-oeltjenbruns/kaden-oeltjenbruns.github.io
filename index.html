@@ -999,6 +999,7 @@
       meta.innerHTML=esc(a.getAttribute('data-tag')||'')+' <span>&middot; '+esc(a.getAttribute('data-date')||'')+' &middot; '+esc(a.getAttribute('data-read')||readTime(a))+'</span>';
       reader.classList.add('open'); reader.setAttribute('aria-hidden','false'); document.body.classList.add('reader-open');
       reader.scrollTop=0; closeBtn.focus();
+      if(window.gcTrack) window.gcTrack('insight/'+id.replace('insight-',''), (h&&h.textContent)||id);
       if(push && location.hash!=='#'+id){ history.pushState(null,'',location.pathname+location.search+'#'+id); }
     }
     function closePost(){
@@ -1029,7 +1030,20 @@
     });
   })();
 </script>
-<script data-goatcounter="https://kaden-oeltjenbruns.goatcounter.com/count"
-        async src="//gc.zgo.at/count.js"></script>
+<script data-goatcounter="https://kaden-oeltjenbruns.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+<script>
+/* Analytics events (GoatCounter): insight opens + link clicks. Safe if GoatCounter is blocked. */
+(function(){
+  function send(path,title){ try{ if(window.goatcounter&&window.goatcounter.count){ window.goatcounter.count({path:path,title:title,event:true}); } }catch(e){} }
+  window.gcTrack=send;
+  document.addEventListener('click',function(e){
+    var a=e.target.closest&&e.target.closest('a'); if(!a) return;
+    var h=a.getAttribute('href')||'';
+    if(/\.pdf(\?|$)/i.test(h)) send('click/resume-download','Resume download');
+    else if(/^mailto:/i.test(h)) send('click/email','Email click');
+    else if(/linkedin\.com/i.test(h)) send('click/linkedin','LinkedIn click');
+  });
+})();
+</script>
 </body>
 </html>
